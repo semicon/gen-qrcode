@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code with Circular Logo Background</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="d-grid justify-content-center mt-3">
+        <h3 class="text-center">Generate QRCode</h3>
+        <form class="row g-3" style=" max-width: 350px" onsubmit="generateQRCodeWithLogo(event)">
+            <div class="col-12 pt-3">
+                <label for="text_x" class="form-label">Text content</label>
+                <input type="text" class="form-control" id="text_x" placeholder="https://guruchian.blogspot.com/">
+            </div>
+            <div class="col-12">
+                <label for="qrSize" class="form-label">QR Code Size (px)</label>
+                <!-- <input type="number" class="form-control" id="qrSize" value="256" min="100" max="500"> -->
+                <select class="form-select" id="qrSize" name="qrSize">
+                    <option value="100">100X100</option>
+                    <option value="150">150X150</option>
+                    <option value="200">200X200</option>
+                    <option value="256">256X256</option>
+                    <option value="300">300X300</option>
+                    <option value="350">350X350</option>
+                </select>
+            </div>
+            <div class="col-12">
+                <label for="logoFile" class="form-label">Upload Logo</label>
+                <input type="file" class="form-control" id="logoFile" accept="image/*">
+            </div>
+            <div class="col-12 text-center">
+                <img id="logoPreview" src="" alt="Logo Preview"
+                    style="max-width: 100px; display: none; margin-top: 10px;">
+            </div>
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary mb-3">Generate QRCode</button>
+            </div>
+        </form>
+
+        <!-- Canvas to draw QR Code with Logo -->
+        <div class="mt-3 text-center">
+            <canvas id="qrCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- QRCode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    
+        document.getElementById('logoFile').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('logoPreview').src = e.target.result;
+                    document.getElementById('logoPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function generateQRCodeWithLogo(event) {
+            event.preventDefault();
+
+            const text = document.getElementById('text_x').value;
+            const qrSize = parseInt(document.getElementById('qrSize').value);
+            const canvas = document.getElementById('qrCanvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = qrSize;
+            canvas.height = qrSize;
+
+            const logoImg = document.getElementById('logoPreview');
+            const logoSize = qrSize / 4;
+            const logoPadding = 2;
+            const logoBackgroundRadius = (logoSize + logoPadding * 2) / 2;
+
+            // Generate QR code
+            const qrCode = new QRCode(document.createElement('div'), {
+                text: text,
+                width: qrSize,
+                height: qrSize,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            const qrImage = new Image();
+            qrImage.src = qrCode._el.querySelector('canvas').toDataURL('image/png');
+            qrImage.onload = function () {
+                context.drawImage(qrImage, 0, 0, qrSize, qrSize);
+
+                if (logoImg.src && logoImg.style.display !== 'none') {
+                    const logoX = (qrSize - logoSize) / 2;
+                    const logoY = (qrSize - logoSize) / 2;
+
+                    // Draw white circular background
+                    context.fillStyle = '#ffffff';
+                    context.beginPath();
+                    context.arc(qrSize / 2, qrSize / 2, logoBackgroundRadius, 0, Math.PI * 2, true);
+                    context.fill();
+
+                    // Clip logo to be circular
+                    context.save();
+                    context.beginPath();
+                    context.arc(qrSize / 2, qrSize / 2, logoSize / 2, 0, Math.PI * 2, true);
+                    context.clip();
+
+                    // Draw circular logo
+                    context.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+
+                    context.restore();
+                }
+            };
+        }
+
+    </script>
+</body>
+
+</html>
